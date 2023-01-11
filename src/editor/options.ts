@@ -18,6 +18,7 @@ import { defaultSpeakHook } from './speech';
 import { defaultReadAloudHook } from './speech-read-aloud';
 import { INLINE_SHORTCUTS } from './shortcuts-definitions';
 import { DEFAULT_KEYBINDINGS } from './keybindings-definitions';
+import { reevaluateBreakpoints } from './reevaluateBreakpoints';
 
 /** @internal */
 export type MathfieldOptionsPrivate = MathfieldOptions & {
@@ -132,6 +133,7 @@ export function update(
 
       case 'virtualKeyboardContainer':
         result.virtualKeyboardContainer = updates.virtualKeyboardContainer!;
+        reevaluateBreakpoints(result.virtualKeyboardContainer);
         break;
 
       case 'macros':
