@@ -40,9 +40,9 @@ export type MathMLStream = {
   lastType: string;
 };
 
-const APPLY_FUNCTION = '&#x2061;';
+const APPLY_FUNCTION = '<mo>&#x2061;</mo>';
 
-const INVISIBLE_TIMES = '&#8290;';
+const INVISIBLE_TIMES = '<mo>&#8290;</mo>';
 
 function xmlEscape(string: string): string {
   return (
@@ -67,20 +67,29 @@ function scanIdentifier(stream: MathMLStream, final: number, options) {
   final = final ?? stream.atoms.length;
   let mathML = '';
   let body = '';
-  const atom: Atom = stream.atoms[stream.index];
+  let atom: Atom = stream.atoms[stream.index];
 
-  if (
-    stream.index < final &&
-    (atom.type === 'mord' || atom.type === 'macro') &&
-    !atom.isDigit()
-  ) {
-    body = atomToMathML(atom, options);
+  if (atom.command === '\\operatorname') {
+    body = toString(atom.body);
     stream.index += 1;
+  } else {
+    const variant = atom.style?.variant ?? '';
+    const variantStyle = atom.style?.variantStyle ?? '';
+    while (
+      stream.index < final &&
+      (atom.type === 'mord' || atom.type === 'macro') &&
+      !atom.isDigit() &&
+      variant === (atom.style?.variant ?? '') &&
+      variantStyle === (atom.style?.variantStyle ?? '')
+    ) {
+      body += toString([atom]);
+      stream.index += 1;
+      atom = stream.atoms[stream.index];
+    }
   }
-
   if (body.length > 0) {
     result = true;
-    mathML = body;
+    mathML = `<mi>${body}</mi>`;
 
     if (
       (stream.lastType === 'mi' ||
@@ -89,10 +98,10 @@ function scanIdentifier(stream: MathMLStream, final: number, options) {
         stream.lastType === 'fence') &&
       !/^<mo>(.*)<\/mo>$/.test(mathML)
     )
-      mathML = `<mo>${INVISIBLE_TIMES}</mo>${mathML}`; // &InvisibleTimes;
+      mathML = INVISIBLE_TIMES + mathML;
 
     if (body.endsWith('>f</mi>') || body.endsWith('>g</mi>')) {
-      mathML += `<mo>${APPLY_FUNCTION}</mo>`; // &ApplyFunction;
+      mathML += APPLY_FUNCTION;
       stream.lastType = 'applyfunction';
     } else stream.lastType = /^<mo>(.*)<\/mo>$/.test(mathML) ? 'mo' : 'mi';
 
@@ -117,14 +126,6 @@ function isSuperscriptAtom(stream: MathMLStream) {
   );
 }
 
-function isSubscriptAtom(stream: MathMLStream) {
-  return (
-    stream.index < stream.atoms.length &&
-    stream.atoms[stream.index].subscript &&
-    stream.atoms[stream.index].type === 'msubsup'
-  );
-}
-
 function indexOfSuperscriptInNumber(stream: MathMLStream) {
   let result = -1;
   let i = stream.index;
@@ -143,21 +144,19 @@ function indexOfSuperscriptInNumber(stream: MathMLStream) {
 }
 
 function parseSubsup(base: string, stream: MathMLStream, options): boolean {
-  let atom: Atom = stream.atoms[stream.index - 1];
+  let atom = stream.atoms[stream.index - 1];
 
   if (!atom) return false;
 
   if (!atom.superscript && !atom.subscript) {
-    if (isSuperscriptAtom(stream) || isSubscriptAtom(stream)) {
+    if (stream.atoms[stream.index]?.type === 'msubsup') {
       atom = stream.atoms[stream.index];
       stream.index += 1;
-    }
+    } else return false;
   }
 
-  if (!atom) return false;
-
-  const superscript = toMathML(atom.superscript!, options);
-  const subscript = toMathML(atom.subscript!, options);
+  const superscript = toMathML(atom.superscript, options);
+  const subscript = toMathML(atom.subscript, options);
 
   if (!superscript && !subscript) return false;
 
@@ -258,15 +257,15 @@ function scanFence(stream: MathMLStream, final: number, options) {
       mathML += toMo(stream.atoms[closeIndex], options);
       mathML += '</mrow>';
 
+      stream.index = closeIndex + 1;
+
       if (
         stream.lastType === 'mi' ||
         stream.lastType === 'mn' ||
         stream.lastType === 'mfrac' ||
         stream.lastType === 'fence'
       )
-        mathML = `<mo>${INVISIBLE_TIMES}</mo>${mathML}`; // &InvisibleTimes;
-
-      stream.index = closeIndex + 1;
+        stream.mathML += INVISIBLE_TIMES;
 
       if (parseSubsup(mathML, stream, options)) {
         result = true;
@@ -339,7 +338,7 @@ function scanOperator(stream: MathMLStream, final: number, options) {
         : toMo(atom, options);
       mathML += op;
       if (!isUnit && !/^<mo>(.*)<\/mo>$/.test(op)) {
-        mathML += `<mo>${APPLY_FUNCTION}</mo>`; // APPLY FUNCTION
+        mathML += APPLY_FUNCTION;
         // mathML += scanArgument(stream);
         lastType = 'applyfunction';
       } else lastType = isUnit ? 'mi' : 'mo';
@@ -349,13 +348,13 @@ function scanOperator(stream: MathMLStream, final: number, options) {
       (stream.lastType === 'mi' || stream.lastType === 'mn') &&
       !/^<mo>(.*)<\/mo>$/.test(mathML)
     )
-      mathML = `<mo>${INVISIBLE_TIMES}</mo>${mathML}`; // &InvisibleTimes;
+      mathML = INVISIBLE_TIMES + mathML;
 
     stream.index += 1;
   }
-  if (!parseSubsup(mathML, stream, options)) {
-    if (mathML.length > 0) {
-      result = true;
+  if (mathML.length > 0) {
+    result = true;
+    if (!parseSubsup(mathML, stream, options)) {
       stream.mathML += mathML;
       stream.lastType = lastType;
     }
@@ -420,12 +419,13 @@ export function toMathML(
 
         result.index += 1;
 
-        if (!parseSubsup(mathML, result, options)) {
+        if (parseSubsup(mathML, result, options)) count += 1;
+        else {
           if (mathML.length > 0) {
             result.mathML += mathML;
             count += 1;
           }
-        } else count += 2;
+        }
       }
     }
 
