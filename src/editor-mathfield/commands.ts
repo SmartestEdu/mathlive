@@ -31,10 +31,6 @@ registerCommand({
     mathfield.field!.scroll(fieldBounds.left - window.scrollX, 0);
     return true;
   },
-  enterLatexMode: (mathfield: MathfieldPrivate) => {
-    mathfield.switchMode('latex');
-    return true;
-  },
   toggleKeystrokeCaption: toggleKeystrokeCaption,
   plonk: (mathfield: MathfieldPrivate) => {
     mathfield.model.announce('plonk');
@@ -71,20 +67,13 @@ registerCommand({
     mathfield.insert('.');
     return true;
   },
+  // A 'commit' command is used to simulate pressing the return/enter key,
+  // e.g. when using a virtual keyboard
   commit: (mathfield: MathfieldPrivate) => {
     if (contentWillChange(mathfield.model, { inputType: 'insertLineBreak' })) {
-      // No matching keybinding: trigger a commit
-
-      if (mathfield.host) {
-        mathfield.host.dispatchEvent(
-          new Event('change', {
-            bubbles: true,
-            composed: true,
-          })
-        );
-      }
-
-      // Dispatch an 'input' event matching the behavior of `<textarea>`
+      mathfield.host?.dispatchEvent(
+        new Event('change', { bubbles: true, composed: true })
+      );
       contentDidChange(mathfield.model, { inputType: 'insertLineBreak' });
     }
     return true;

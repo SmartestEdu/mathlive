@@ -414,20 +414,6 @@ const KEYBOARDS: Record<string, VirtualKeyboardDefinition> = {
     classes: 'tex',
     layers: ['symbols'],
   },
-  latex: {
-    tooltip: 'keyboard.tooltip.command',
-    // For the latex keyboard, perform a command rather than
-    // doing a simple layer switch, as we want to enter latex mode
-    // when the keyboard is activated
-    command: ['switchMode', 'latex'],
-    label: `<svg class="svg-glyph"><use xlink:href='#svg-command' /></svg>`,
-    layers: ['latex-lower', 'latex-upper', 'latex-symbols'],
-  },
-  style: {
-    tooltip: 'keyboard.tooltip.style',
-    layer: 'style',
-    label: '<b>b</b><i>i</i>𝔹',
-  },
 };
 
 const SHIFTED_KEYS = {
@@ -625,7 +611,7 @@ const ALT_KEYS_BASE: {
 
   'numeric-pi': ['\\prod', '\\theta', '\\rho', '\\sin', '\\cos', '\\tan'],
 
-  'ee': ['\\times 10^{#?}', '\\ln', '\\ln_{10}', '\\log'],
+  'ee': ['\\times 10^{#?}', '\\ln', '\\log_{10}', '\\log'],
 
   '^': ['_{#?}'],
 
@@ -1128,67 +1114,7 @@ const LAYERS = {
                 <arrows/>
             </ul>
         </div>`,
-  'latex-lower': `
-        <div class='rows'>
-            <ul><row name='lower-1' class='tt' shift-layer='latex-upper'/></ul>
-            <ul><row name='lower-2' class='tt' shift-layer='latex-upper'/></ul>
-            <ul><row name='lower-3' class='tt' shift-layer='latex-upper'/></ul>
-            <ul>
-                <li class='layer-switch font-glyph modifier bottom left' data-layer='latex-symbols'>01#</li>
-                <li class='keycap tt' data-shifted='[' data-shifted-command='["insertAndUnshiftKeyboardLayer", "["]'>{</li>
-                <li class='keycap tt' data-shifted=']' data-shifted-command='["insertAndUnshiftKeyboardLayer", "]"]'>}</li>
-                <li class='keycap tt' data-shifted='(' data-shifted-command='["insertAndUnshiftKeyboardLayer", "("]'>^</li>
-                <li class='keycap tt' data-shifted=')' data-shifted-command='["insertAndUnshiftKeyboardLayer", ")"]'>_</li>
-                <li class='keycap w20' data-key=' '>&nbsp;</li>
-                <arrows/>
-            </ul>
-        </div>`,
-  'latex-upper': `
-        <div class='rows'>
-            <ul><row name='upper-1' class='tt' shift-layer='latex-lower'/></ul>
-            <ul><row name='upper-2' class='tt' shift-layer='latex-lower'/></ul>
-            <ul><row name='upper-3' class='tt' shift-layer='latex-lower'/></ul>
-            <ul>
-                <li class='layer-switch font-glyph modifier bottom left' data-layer='latex-symbols'01#</li>
-                <li class='keycap tt'>[</li>
-                <li class='keycap tt'>]</li>
-                <li class='keycap tt'>(</li>
-                <li class='keycap tt'>)</li>
-                <li class='keycap w20' data-key=' '>&nbsp;</li>
-                <arrows/>
-            </ul>
-        </div>`,
-  'latex-symbols': `
-        <div class='rows'>
-            <ul><li class='keycap tt'>1</li><li class='keycap tt'>2</li><li class='keycap tt'>3</li><li class='keycap tt'>4</li><li class='keycap tt'>5</li><li class='keycap tt'>6</li><li class='keycap tt'>7</li><li class='keycap tt'>8</li><li class='keycap tt'>9</li><li class='keycap tt'>0</li></ul>
-            <ul><li class='keycap tt'>!</li><li class='keycap tt'>@</li><li class='keycap tt'>#</li><li class='keycap tt'>$</li><li class='keycap tt'>%</li><li class='keycap tt'>^</li><li class='keycap tt'>&</li><li class='keycap tt'>*</li><li class='keycap tt'>+</li><li class='keycap tt'>=</li></ul>
-            <ul>
-                <li class='keycap tt'>\\</li>
-                <li class='keycap tt'>|</li>
-                <li class='keycap tt'>/</li>
-                <li class='keycap tt'>\`</li>
-                <li class='keycap tt'>;</li>
-                <li class='keycap tt'>:</li>
-                <li class='keycap tt'>?</li>
-                <li class='keycap tt'>'</li>
-                <li class='keycap tt'>"</li>
-                <li class='action font-glyph bottom right'
-                    data-shifted='<span class="warning"><svg class="svg-glyph"><use xlink:href="#svg-trash" /></svg></span>'
-                    data-shifted-command='"deleteAll"'
-                    data-alt-keys='delete' data-command='["performWithFeedback","deleteBackward"]'
-                ><svg class="svg-glyph"><use xlink:href="#svg-delete-backward" /></svg></li>
-            </ul>
-            <ul>
-                <li class='layer-switch font-glyph modifier bottom left' data-layer='latex-lower'>abc</li>
-                <li class='keycap tt'>&lt;</li>
-                <li class='keycap tt'>&gt;</li>
-                <li class='keycap tt'>~</li>
-                <li class='keycap tt'>,</li>
-                <li class='keycap tt'>.</li>
-                <li class='keycap' data-key=' '>&nbsp;</li>
-                <arrows/>
-            </ul>
-        </div>`,
+
   'functions': `
         <div class='rows'>
             <ul><li class='separator'></li>
@@ -1205,7 +1131,7 @@ const LAYERS = {
             <ul><li class='separator'></li>
                 <li class='fnbutton' data-latex='\\cos'></li>
                 <li class='fnbutton' data-latex='\\cos^{-1}'></li>
-                <li class='fnbutton' data-latex='\\ln_{10}'></li>
+                <li class='fnbutton' data-latex='\\log'></li>
                 <li class='fnbutton' data-latex='10^{#?}'></li>
                 <li class='bigfnbutton' data-latex='\\operatorname{gcd}(#?)' data-latex='\\operatorname{gcd}()'></li>
                 <li class='bigfnbutton' data-latex='\\operatorname{floor}(#?)' data-latex='\\operatorname{floor}()'></li>
@@ -1340,9 +1266,9 @@ function makeKeyboardToolbar(
         if (typeof keyboards[keyboard].command === 'string')
           result += `data-command='"${keyboards[keyboard].command as string}"'`;
         else if (Array.isArray(keyboards[keyboard].command)) {
-          result += `data-command='"${(
-            keyboards[keyboard].command as string[]
-          ).join('')}"'`;
+          result += `data-command='${JSON.stringify(
+            keyboards[keyboard].command
+          )}'`;
         }
 
         if (keyboards[keyboard].layer)
@@ -1492,7 +1418,7 @@ export function makeKeycap(
     if (selector) {
       if (chainedCommand) selector = [chainedCommand, selector];
 
-      let handlers: ButtonHandlers = selector;
+      let handlers: ButtonHandlers = { default: selector };
       const altKeysetId = element.getAttribute('data-alt-keys');
       if (altKeysetId) {
         const altKeys = ALT_KEYS[altKeysetId];
@@ -1508,8 +1434,8 @@ export function makeKeycap(
       }
 
       attachButtonHandlers(
-        (command) => keyboard.executeCommand(command),
         element,
+        (command) => keyboard.executeCommand(command),
         handlers
       );
     }
@@ -1684,7 +1610,7 @@ function expandLayerMarkup(
         } else if (cls.includes('tt')) {
           row +=
             `<li class='keycap${cls}' data-alt-keys='${c}' ` +
-            `data-command='["typedText","${c}",{"mode":"command", "focus":true, "feedback":true}]'` +
+            `data-command='["typedText","${c}",{"mode":"latex", "focus":true, "feedback":true}]'` +
             `>${c}</li>`;
         } else {
           row +=
@@ -1915,7 +1841,7 @@ export function makeKeyboardElement(
 
   keyboardIDs = keyboardIDs.replace(
     /\ball\b/i,
-    'numeric functions symbols roman  greek'
+    'numeric functions symbols roman greek'
   );
 
   const layers: Record<string, string | Partial<VirtualKeyboardLayer>> = {
@@ -2077,8 +2003,8 @@ export function makeKeyboardElement(
     if (element.classList.contains('shift')) {
       // This is a potential press-and-hold layer switch
       attachButtonHandlers(
-        (command) => keyboard.executeCommand(command),
         element,
+        (command) => keyboard.executeCommand(command),
         {
           // When the modifier is initially pressed, we will shift the labels
           // (if available)
@@ -2095,8 +2021,8 @@ export function makeKeyboardElement(
     } else {
       // This is a simple layer switch
       attachButtonHandlers(
-        (command) => keyboard.executeCommand(command),
         element,
+        (command) => keyboard.executeCommand(command),
         {
           default: ['switchKeyboardLayer', element.getAttribute('data-layer')],
         }

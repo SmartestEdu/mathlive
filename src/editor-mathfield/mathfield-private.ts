@@ -390,8 +390,8 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     this.field.addEventListener('wheel', this, { passive: false });
 
     attachButtonHandlers(
-      (command) => this.executeCommand(command),
       this.virtualKeyboardToggle,
+      (command) => this.executeCommand(command),
       {
         default: 'toggleVirtualKeyboard',
         alt: 'toggleVirtualKeyboardAlt',
@@ -932,9 +932,9 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     return ce.box(ce.parse(this.model.getValue()));
   }
 
-  loadSound(
+  async loadSound(
     sound: 'keypress' | 'spacebar' | 'delete' | 'plonk' | 'return'
-  ): void {
+  ): Promise<void> {
     //  Clear out the cached audio buffer
     delete this.audioBuffers[sound];
 
@@ -978,18 +978,18 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
       return;
 
     // Fetch the audio buffer
-    fetch(resolveUrl(soundsDirectory + '/' + soundFile))
-      .then((response) => response.arrayBuffer())
-      .then((arrayBuffer) => this.audioContext.decodeAudioData(arrayBuffer))
-      .then((audioBuffer) => {
-        this.audioBuffers[sound] = audioBuffer;
-      });
+    const response = await fetch(
+      await resolveUrl(soundsDirectory + '/' + soundFile)
+    );
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+    this.audioBuffers[sound] = audioBuffer;
   }
 
-  playSound(
+  async playSound(
     name: 'keypress' | 'spacebar' | 'delete' | 'plonk' | 'return'
-  ): void {
-    if (!this.audioBuffers[name]) this.loadSound(name);
+  ): Promise<void> {
+    if (!this.audioBuffers[name]) await this.loadSound(name);
     if (!this.audioBuffers[name]) return;
 
     // A sound source can't be played twice, so creeate a new one
@@ -1097,7 +1097,7 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
         if (this.options.keypressVibration && canVibrate())
           navigator.vibrate(HAPTIC_FEEDBACK_DURATION);
 
-        void this.playSound('keypress');
+        this.playSound('keypress');
       }
 
       if (options.scrollIntoView) this.scrollIntoView();
@@ -1171,10 +1171,6 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
           // We can have only a single latex group at a time.
           // If a latex group is open, close it first
           complete(this, 'accept');
-
-          // Switch to the command mode keyboard layer
-          if (this.virtualKeyboard?.visible)
-            this.executeCommand(['switchKeyboardLayer', 'latex-lower']);
 
           // Insert a latex group atom
           let latex: string;
@@ -1486,6 +1482,13 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
       })
     );
 
+    this.host?.dispatchEvent(
+      new UIEvent('focusin', {
+        bubbles: true, // unlike 'focus', focusin does bubble
+        composed: true,
+      })
+    );
+
     // Save the current value.
     // It will be compared in `onBlur()` to see if the
     // `change` event needs to be dispatched. This
@@ -1503,8 +1506,12 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     this.ariaLiveText!.textContent = '';
 
     complete(this, 'accept');
-    if (this.model.getValue() !== this.valueOnFocus)
-      this.executeCommand('commit');
+
+    if (this.model.getValue() !== this.valueOnFocus) {
+      this.host?.dispatchEvent(
+        new Event('change', { bubbles: true, composed: true })
+      );
+    }
 
     if (
       /onfocus|manual/.test(this.options.virtualKeyboardMode) &&
@@ -1517,6 +1524,13 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     this.host?.dispatchEvent(
       new Event('blur', {
         bubbles: false, // DOM 'focus' and 'blur' don't bubble
+        composed: true,
+      })
+    );
+
+    this.host?.dispatchEvent(
+      new UIEvent('focusout', {
+        bubbles: true, // unlike 'blur', focusout does bubble
         composed: true,
       })
     );
