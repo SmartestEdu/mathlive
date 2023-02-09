@@ -1372,7 +1372,8 @@ function renderStyleRun(
   // In most cases we want to display selection,
   // except if the `atomIdsSettings.groupNumbers` flag is set which is used for
   // read aloud.
-  const displaySelection = !context.atomIdsSettings?.groupNumbers;
+  const displaySelection =
+    !context.atomIdsSettings || !context.atomIdsSettings.groupNumbers;
 
   let boxes: Box[] = [];
   let newList = options?.newList ?? false;

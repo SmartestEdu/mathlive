@@ -145,14 +145,7 @@
         background: transparent;
         border: 1px solid transparent; // #e5e6e9;
         border-radius: 5px;
-
         pointer-events: all;
-        cursor: pointer;
-
-        .ML__mathlive {
-          pointer-events: none;
-        }
-
         color: var(--keyboard-alternate-text);
         fill: currentColor;
         &:hover,
@@ -243,6 +236,7 @@
     touch-action: none;
     -webkit-user-select: none;
     user-select: none;
+    cursor: pointer;
 
     box-shadow: @shadow2;
 
@@ -452,12 +446,6 @@
           border-bottom-color: var(--keycap-background-border-bottom);
           border-radius: 5px;
 
-          cursor: pointer;
-
-          .ML__mathlive {
-            pointer-events: none;
-          }
-
           /* Last key should be flush against the border */
           &:last-child {
             margin-right: 0;
@@ -549,12 +537,15 @@
             font-size: 25px;
           }
           // &.tt {font-size: 30px;}
+          &:hover,
           &.is-pressed {
             // box-shadow: inset 0 0 1px 1px #8d8f92;
             background: var(--keycap-background-active);
             color: var(--keyboard-text-active);
           }
+          &.keycap:active,
           &.keycap.is-active,
+          &.action:active,
           &.action.is-active {
             // -0.2 = 1.0 - 1.4
             transform: translateY(
@@ -564,6 +555,7 @@
             z-index: calc(var(--keyboard-zindex, @keyboard-zindex) - 5);
             color: var(--keyboard-text-active);
           }
+          &.modifier:active,
           &.modifier.is-active {
             background: var(--keyboard-text-active);
             color: var(--keycap-text-active);
@@ -621,7 +613,7 @@
             font-weight: 100;
           }
           small {
-            color: var(--keycap-secondary-text);
+            color: #555;
             @media only screen and (max-width: 767px) {
               font-size: 9px;
             }
@@ -630,7 +622,7 @@
             font-family: @system;
             font-size: 10px;
             line-height: 10px;
-            color: var(--keycap-secondary-text);
+            color: #666;
             /* On small screens, don't display */
             @media only screen and (max-width: 767px) {
               display: none;

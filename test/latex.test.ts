@@ -1,7 +1,4 @@
-import {
-  convertLatexToMarkup,
-  validateLatex,
-} from '../src/public/mathlive-ssr';
+import { convertLatexToMarkup, validateLatex } from '../src/mathlive';
 
 function markupAndError(formula: string): [string, string] {
   const markup = convertLatexToMarkup(formula, { mathstyle: 'displaystyle' });
