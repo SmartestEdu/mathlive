@@ -1,3 +1,32 @@
+## [Unreleased]
+
+### Improvements
+
+- **#1800** More closely matches the behavior of the `textarea` element. Only
+  dispatch an `"input"` event with an `inputType` of `"insertLineBreak"` when
+  the user pressed the **RETURN** or **ENTER** key. Also dispatch a `focusin`
+  and `focusout` event when applicable.
+- Removed dependency on `jsdom` for server-side rendering.
+
+## 0.86.1 (2023-01-18)
+
+### Bug Fixes
+
+- **#1773**, **#1542**: better handling of interaction with the virtual keyboard
+  on touch-based devices (always use PointerEvents to handle interaction with
+  keycaps)
+- **#1035** Removing the last mathfield element from a page could result in math
+  content rendered with `renderMathInElement()` to no longer be rendered
+  correctly (the necessary stylesheet was erroneously removed).
+- **#1791** The "aside" labels in the virtual keyboard were barely visible in
+  dark mode.
+- **#1726** Deleting the last element of a fraction also deletes the fraction
+- **#1764** The MathML serialization for superscripts and subscripts was
+  invalid.
+- **#1790** Annotations from the `\enclose` command could not be displayed in
+  some cases if the `z-index` of the expression they decorated had certain
+  values.
+
 ## 0.86.0 (2022-12-02)
 
 ### Breaking Changes
