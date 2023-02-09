@@ -15,6 +15,16 @@ export RESET="\033[0;0m"
 export ERROR="\033[31;7m ERROR \033[0;0m"
 export LINECLEAR="\033[1G\033[2K" # position to column 1; erase whole line
 
+
+# Note on the `sed` command:
+# On Linux, the -i switch can be used without an extension argument
+# On macOS, the -i switch must be followed by an extension argument (which can be empty)
+# On Windows, the argument of the -i switch is optional, but if present it must follow it immediately without a space in between
+sedi () {
+    sed --version >/dev/null 2>&1 && sed -i -- "$@" || sed -i "" "$@"
+}
+export -f sedi
+
 cd "$(dirname "$0")/.."
 
 if [ "$#" -gt 1 ]; then
@@ -38,6 +48,12 @@ export BUILD="${1-production}"
 
 # export GIT_VERSION=`git describe --long --dirty`
 
+export SDK_VERSION=$(cat package.json \
+| grep version \
+| head -1 \
+| awk -F: '{ print $2 }' \
+| sed 's/[",]//g' \
+| tr -d '[[:space:]]')
 
 # Clean output directories
 printf "$BASENAME${DOT}Cleaning output directories"
@@ -49,8 +65,6 @@ rm -rf ./coverage
 mkdir -p dist
 mkdir -p declarations
 echo -e  $LINECLEAR$BASENAME$CHECK${DIM}"Cleaning output directories"$RESET
-
-
 
 # Bundle Typescript declaration files (.d.ts).
 # Even though we only generate declaration files, the target must be set 
@@ -82,35 +96,15 @@ if [ "$BUILD" = "production" ]; then
 fi
 
 
+
+
 # Do build (development or production)
 printf "$BASENAME${DOT}Making a ${EMPH}${BUILD}${RESET} build"
-node --experimental-json-modules ./scripts/build.mjs
+npx rollup --silent --config 
 echo -e "$LINECLEAR$BASENAME$CHECK${EMPH}${BUILD}${RESET}${DIM} build done${RESET}"
 
-
-
 if [ "$BUILD" = "production" ]; then
-    #
     # Stamp the SDK version number
-    #
-
-    # Note on the `sed` command:
-    # On Linux, the -i switch can be used without an extension argument
-    # On macOS, the -i switch must be followed by an extension argument (which can be empty)
-    # On Windows, the argument of the -i switch is optional, but if present it must follow it immediately without a space in between
-    sedi () {
-        sed --version >/dev/null 2>&1 && sed -i -- "$@" || sed -i "" "$@"
-    }
-    export -f sedi
-
-
-    export SDK_VERSION=$(cat package.json \
-    | grep version \
-    | head -1 \
-    | awk -F: '{ print $2 }' \
-    | sed 's/[",]//g' \
-    | tr -d '[[:space:]]')
-
     printf "$BASENAME${DOT}Stamping output files"
     find ./dist -type f -name '*.css' -exec bash -c 'sedi "1s/^/\/\* $SDK_VERSION \*\//" {}' \;
     find ./dist -type f \( -name '*.mjs' -o -name '*.js' \) -exec bash -c 'sedi s/{{SDK_VERSION}}/$SDK_VERSION/g {}' \;

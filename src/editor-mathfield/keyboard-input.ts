@@ -97,7 +97,7 @@ export function onKeystroke(
   // Ignore the key if Command or Control is pressed (it may be a keybinding,
   // see 4.3)
   if (!mathfield.options.readOnly) {
-    if (mathfield.mode === 'math') {
+    if (mathfield.mode === 'math' && !evt.ctrlKey && !evt.metaKey) {
       if (keystroke === '[Backspace]') {
         // Special case for backspace to correctly handle undoing
         mathfield.inlineShortcutBuffer.pop();
@@ -105,6 +105,7 @@ export function onKeystroke(
       } else if (!mightProducePrintableCharacter(evt)) {
         // It was a non-alpha character (PageUp, End, etc...)
         mathfield.flushInlineShortcutBuffer();
+        mathfield.snapshot();
       } else {
         const c = eventToChar(evt);
 
@@ -212,7 +213,10 @@ export function onKeystroke(
 
         if (mathfield.host) {
           result = !mathfield.host.dispatchEvent(
-            new Event('change', { bubbles: true, composed: true })
+            new Event('change', {
+              bubbles: true,
+              composed: true,
+            })
           );
         }
 
@@ -429,7 +433,8 @@ export function onTypedText(
   //
   // 2/ Switch mode if requested
   //
-  if (typeof options.mode === 'string') mathfield.switchMode(options.mode);
+  if (typeof options.mode === 'string' && mathfield.mode !== options.mode)
+    mathfield.switchMode(options.mode);
 
   //
   // 3/ Simulate keystroke, if requested
@@ -551,7 +556,7 @@ function getLeftSiblings(mf: MathfieldPrivate): Atom[] {
   let atom = model.at(Math.min(model.position, model.anchor));
   while (atom.type !== 'first') {
     result.push(atom);
-    atom = atom.leftSibling!;
+    atom = atom.leftSibling;
   }
 
   return result;

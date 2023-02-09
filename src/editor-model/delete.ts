@@ -75,20 +75,15 @@ import { contentWillChange } from './listeners';
 // }
 
 /**
- * Handle special cases when deleting an atom as per the table below:
+ * Handle special cases when deleting an atom as per the table below
  * - deleting an empty numerator: demote fraction
  * - forward-deleting a square root: demote it
  * - delete last atom inside a square root: delete the square root
  * - delete last atom in a subsup: delete the subsup
  * - etc...
  *
- * Note that `onDelete` may be called twice: once on the atom being deleted
- * directly (in this case `branch` is `undefined`) and a second time
- * on the parent if the atom was the first/last (in which case `branch` indicate
- * which branch the atom was in).
  *
- *
- * @param branch: if deleting inside an atom, the branch being deleted
+ * @param branch: if deleting inside an atom, the branch being delete
  * (always the first or last atom of the branch). If undefined, the atom
  * itself is about to be deleted.
  *
@@ -100,12 +95,11 @@ function onDelete(
   atom: Atom,
   branch?: Branch
 ): boolean {
-  const parent = atom.parent;
-
-  //
-  // 'leftright': \left\right
-  //
-  if (parent && atom instanceof LeftRightAtom) {
+  const parent = atom.parent!;
+  if (atom instanceof LeftRightAtom) {
+    //
+    // 'leftright': \left\right
+    //
     const atStart =
       (!branch && direction === 'forward') ||
       (branch === 'body' && direction === 'backward');
@@ -141,10 +135,10 @@ function onDelete(
     return true;
   }
 
-  //
-  // 'surd': square root
-  //
-  if (parent && atom.type === 'surd') {
+  if (atom.type === 'surd') {
+    //
+    // 'surd': square root
+    //
     if (
       (direction === 'forward' && !branch) ||
       (direction === 'backward' && branch === 'body')
@@ -181,10 +175,10 @@ function onDelete(
     return true;
   }
 
-  //
-  // 'box': \boxed, \fbox 'enclose': \cancel
-  //
-  if (parent && (atom.type === 'box' || atom.type === 'enclose')) {
+  if (atom.type === 'box' || atom.type === 'enclose') {
+    //
+    // 'box': \boxed, \fbox 'enclose': \cancel
+    //
     const pos =
       (branch && direction === 'backward') ||
       (!branch && direction === 'forward')
@@ -199,7 +193,6 @@ function onDelete(
   //
   // 'genfrac': \frac, \choose, etc...
   //
-
   if (atom.type === 'genfrac' || atom.type === 'overunder') {
     if (!branch) {
       // After or before atom
@@ -224,9 +217,8 @@ function onDelete(
     const secondBranch = firstBranch === 'above' ? 'below' : 'above';
 
     if (
-      parent &&
-      ((direction === 'forward' && branch === firstBranch) ||
-        (direction === 'backward' && branch === secondBranch))
+      (direction === 'forward' && branch === firstBranch) ||
+      (direction === 'backward' && branch === secondBranch)
     ) {
       // Above last or below first: hoist
       const first = atom.removeBranch(firstBranch);
@@ -240,10 +232,14 @@ function onDelete(
       return true;
     }
 
-    if (direction === 'backward')
+    if (direction === 'backward') {
+      // Above first: move to before
       model.position = model.offsetOf(atom.leftSibling);
-    else model.position = model.offsetOf(atom);
+      return true;
+    }
 
+    // Below last: move to after
+    model.position = model.offsetOf(atom);
     return true;
   }
 
@@ -304,23 +300,6 @@ function onDelete(
     return true;
   }
 
-  if (parent?.type === 'genfrac' && !branch && atom.type !== 'first') {
-    let pos = model.offsetOf(atom.leftSibling);
-    parent.removeChild(atom);
-    if (parent.hasEmptyBranch('above') && parent.hasEmptyBranch('below')) {
-      // The last numerator or denominator of a fraction has been deleted:
-      // delete the fraction
-      pos = model.offsetOf(parent.leftSibling);
-      parent.parent!.removeChild(parent);
-      model.announce('delete', undefined, [parent]);
-      model.position = pos;
-      return true;
-    }
-    model.announce('delete', undefined, [atom]);
-    model.position = pos;
-    return true;
-  }
-
   return false;
 }
 
@@ -374,7 +353,7 @@ export function deleteForward(model: ModelPrivate): boolean {
   return model.deferNotifications(
     { content: true, selection: true, type: 'deleteContentForward' },
     () => {
-      let target: Atom | undefined = model.at(model.position).rightSibling;
+      let target: Atom | null = model.at(model.position).rightSibling;
 
       if (target && onDelete(model, 'forward', target)) return;
 
@@ -386,7 +365,7 @@ export function deleteForward(model: ModelPrivate): boolean {
         )
           return;
 
-        target = undefined;
+        target = null;
       } else if (
         model.at(model.position).isLastSibling &&
         onDelete(model, 'forward', target.parent!, target.treeBranch)
@@ -445,32 +424,6 @@ export function deleteRange(
           model.offsetOf(parent.rightSibling),
         ];
       }
-    }
-
-    // If we have a placeholder denominator selected,
-    // hoist the denominator
-    if (
-      result.length === 1 &&
-      result[0].type === 'placeholder' &&
-      result[0].parent.type === 'genfrac'
-    ) {
-      const genfrac = result[0].parent!;
-      const branch = result[0].treeBranch === 'below' ? 'above' : 'below';
-      const pos = model.offsetOf(genfrac.leftSibling);
-      return model.deferNotifications(
-        { content: true, selection: true, type },
-        () => {
-          const numer = genfrac.removeBranch(branch);
-          if (!(numer.length === 1 && numer[0].type === 'placeholder')) {
-            const lastAtom = genfrac.parent!.addChildrenAfter(numer, genfrac);
-            genfrac.parent?.removeChild(genfrac);
-            model.position = model.offsetOf(lastAtom);
-          } else {
-            genfrac.parent?.removeChild(genfrac);
-            model.position = Math.max(0, pos);
-          }
-        }
-      );
     }
   }
   return model.deferNotifications(

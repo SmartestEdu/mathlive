@@ -1,22 +1,14 @@
 #!/usr/bin/env node
 /* eslint-disable @typescript-eslint/no-var-requires */
-
-const { context } = require('esbuild');
+const { build } = require('estrella');
+const open = require('open');
 const less = require('@arnog/esbuild-plugin-less');
+const { exec } = require('child_process');
 
-// Copy and watch the smoke test file
-context({
-  entryPoints: ['./test/smoke/index.html', './test/smoke/style.css'],
-  outdir: './dist',
-  loader: {
-    '.html': 'copy',
-    '.css': 'copy',
-  },
-}).then((ctx) => ctx.watch());
+let serverLaunched = false;
 
-// Build and serve the library
-context({
-  entryPoints: ['./src/mathlive.ts'],
+build({
+  entry: './src/mathlive.ts',
   outfile: './dist/mathlive.mjs',
   format: 'esm',
   bundle: true,
@@ -24,14 +16,37 @@ context({
   loader: {
     '.ts': 'ts',
   },
+  watch: true,
+  cwd: '.', // Required so that the tsc error message include a path relative to the project root
+  debug: true,
   sourcemap: true,
-  sourceRoot: '../src',
-  sourcesContent: false,
-}).then((ctx) =>
-  ctx.serve({ host: '127.0.0.1', servedir: '.' }).then(({ host, port }) => {
-    if (host === '0.0.0.0') host = 'localhost';
-    console.log(
-      ` 🚀 Server ready \u001b[1;35m http://${host}:${port}/dist/\u001b[0m`
-    );
-  })
-);
+  tslint: {
+    mode: 'on',
+    format: 'full',
+  },
+  silent: false,
+  quiet: true,
+  clear: false,
+  onEnd: (_config, buildResult, _ctx) => {
+    if (buildResult.errors.length === 0) {
+      if (serverLaunched) {
+        console.log(` 🚀 Build Complete`);
+        return;
+      }
+      const url = `http://localhost:8080/test/smoke/`;
+      console.log(` 🚀 Server ready:\u001b[1;35m ${url}\u001b[0m`);
+      exec(
+        "npx http-server . -s -c-1 --cors='*' --port 8080",
+        (error, stdout, stderr) => {
+          if (error) {
+            throw Error(error);
+          }
+          console.log(stdout);
+          console.error(stderr);
+        }
+      );
+      serverLaunched = true;
+      open(url);
+    }
+  },
+});

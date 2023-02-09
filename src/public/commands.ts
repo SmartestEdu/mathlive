@@ -256,11 +256,11 @@ export interface Commands {
   /**
    * @category Selection
    */
-  moveToMathfieldStart: (model: Model) => boolean;
+  moveToMathFieldStart: (model: Model) => boolean;
   /**
    * @category Selection
    */
-  moveToMathfieldEnd: (model: Model) => boolean;
+  moveToMathFieldEnd: (model: Model) => boolean;
   /**
    * @category Selection
    */

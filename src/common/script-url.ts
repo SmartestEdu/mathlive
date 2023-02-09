@@ -49,6 +49,28 @@ function getFileUrl() {
 // URL
 let gResolvedScriptUrl: string | null = null;
 
+export function resolveUrl(url: string): string {
+  // Is  it an absolute URL?
+  if (/^(?:[a-z+]+:)?\/\//i.test(url)) return new URL(url).href;
+
+  // This may be a relative URL
+  if (gResolvedScriptUrl === null) {
+    try {
+      const request = new XMLHttpRequest();
+      // Do a `HEAD` request, we don't care about the body
+      request.open('HEAD', gScriptUrl, false);
+      request.send(null);
+      if (request.status === 200) gResolvedScriptUrl = request.responseURL;
+    } catch (e) {
+      console.error(`Invalid URL "${url}" (relative to "${gScriptUrl}")`);
+    }
+  }
+
+  if (gResolvedScriptUrl) return new URL(url, gResolvedScriptUrl).href;
+
+  return '';
+}
+
 // The URL of the bundled MathLive library. Used later to locate the `fonts`
 // directory, relative to the library
 
@@ -65,20 +87,3 @@ let gResolvedScriptUrl: string | null = null;
 const gScriptUrl =
   (globalThis?.document?.currentScript as HTMLScriptElement)?.src ||
   getFileUrl();
-
-export async function resolveUrl(url: string): Promise<string> {
-  // Is  it an absolute URL?
-  if (/^(?:[a-z+]+:)?\/\//i.test(url)) return new URL(url).href;
-
-  // This may be a relative URL
-  if (gResolvedScriptUrl === null) {
-    try {
-      const response = await fetch(gScriptUrl, { method: 'HEAD' });
-      if (response.status === 200) gResolvedScriptUrl = response.url;
-    } catch (e) {
-      console.error(`Invalid URL "${url}" (relative to "${gScriptUrl}")`);
-    }
-  }
-
-  return new URL(url, gResolvedScriptUrl ?? gScriptUrl).href;
-}
