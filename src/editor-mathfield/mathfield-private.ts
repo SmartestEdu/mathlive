@@ -1508,7 +1508,7 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     complete(this, 'accept');
     if (this.model.getValue() !== this.valueOnFocus) {
       this.host?.dispatchEvent(
-          new Event('change', { bubbles: true, composed: true })
+        new Event('change', { bubbles: true, composed: true })
       );
     }
 
@@ -1528,10 +1528,10 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     );
 
     this.host?.dispatchEvent(
-        new UIEvent('focusout', {
-          bubbles: true, // unlike 'blur', focusout does bubble
-          composed: true,
-        })
+      new UIEvent('focusout', {
+        bubbles: true, // unlike 'blur', focusout does bubble
+        composed: true,
+      })
     );
 
     requestUpdate(this);
