@@ -75,7 +75,7 @@ import { contentWillChange } from './listeners';
 // }
 
 /**
- * Handle special cases when deleting an atom as per the table below
+ * Handle special cases when deleting an atom as per the table below:
  * - deleting an empty numerator: demote fraction
  * - forward-deleting a square root: demote it
  * - delete last atom inside a square root: delete the square root
@@ -83,7 +83,7 @@ import { contentWillChange } from './listeners';
  * - etc...
  *
  *
- * @param branch: if deleting inside an atom, the branch being delete
+ * @param branch: if deleting inside an atom, the branch being deleted
  * (always the first or last atom of the branch). If undefined, the atom
  * itself is about to be deleted.
  *
@@ -95,8 +95,28 @@ function onDelete(
   atom: Atom,
   branch?: Branch
 ): boolean {
-  const parent = atom.parent!;
-  if (atom instanceof LeftRightAtom) {
+  const parent = atom.parent;
+
+  if (parent?.type === 'genfrac') {
+    let pos = model.offsetOf(atom.leftSibling);
+    parent.removeChild(atom);
+
+    if (parent.hasEmptyBranch('above') && parent.hasEmptyBranch('below')) {
+      // The last numerator or denominator of a fraction has been deleted:
+      // delete the fraction
+
+      pos = model.offsetOf(parent.leftSibling);
+      parent.parent!.removeChild(parent);
+      model.announce('delete', undefined, [parent]);
+      model.position = pos;
+      return true;
+    }
+    model.announce('delete', undefined, [atom]);
+    model.position = pos;
+    return true;
+  }
+
+  if (parent && atom instanceof LeftRightAtom) {
     //
     // 'leftright': \left\right
     //
@@ -135,7 +155,7 @@ function onDelete(
     return true;
   }
 
-  if (atom.type === 'surd') {
+  if (parent && atom.type === 'surd') {
     //
     // 'surd': square root
     //
@@ -175,7 +195,7 @@ function onDelete(
     return true;
   }
 
-  if (atom.type === 'box' || atom.type === 'enclose') {
+  if (parent && (atom.type === 'box' || atom.type === 'enclose')) {
     //
     // 'box': \boxed, \fbox 'enclose': \cancel
     //
@@ -217,8 +237,9 @@ function onDelete(
     const secondBranch = firstBranch === 'above' ? 'below' : 'above';
 
     if (
-      (direction === 'forward' && branch === firstBranch) ||
-      (direction === 'backward' && branch === secondBranch)
+      parent &&
+      ((direction === 'forward' && branch === firstBranch) ||
+        (direction === 'backward' && branch === secondBranch))
     ) {
       // Above last or below first: hoist
       const first = atom.removeBranch(firstBranch);
