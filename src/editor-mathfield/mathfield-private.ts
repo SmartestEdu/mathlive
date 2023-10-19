@@ -390,8 +390,8 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     this.field.addEventListener('wheel', this, { passive: false });
 
     attachButtonHandlers(
-      (command) => this.executeCommand(command),
       this.virtualKeyboardToggle,
+      (command) => this.executeCommand(command),
       {
         default: 'toggleVirtualKeyboard',
         alt: 'toggleVirtualKeyboardAlt',
@@ -1172,10 +1172,6 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
           // If a latex group is open, close it first
           complete(this, 'accept');
 
-          // Switch to the command mode keyboard layer
-          if (this.virtualKeyboard?.visible)
-            this.executeCommand(['switchKeyboardLayer', 'latex-lower']);
-
           // Insert a latex group atom
           let latex: string;
           let cursor = model.at(model.position);
@@ -1487,10 +1483,10 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     );
 
     this.host?.dispatchEvent(
-      new UIEvent('focusin', {
-        bubbles: true, // unlike 'focus', focusin does bubble
-        composed: true,
-      })
+        new UIEvent('focusin', {
+          bubbles: true, // unlike 'focus', focusin does bubble
+          composed: true,
+        })
     );
 
     // Save the current value.
@@ -1510,7 +1506,6 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     this.ariaLiveText!.textContent = '';
 
     complete(this, 'accept');
-
     if (this.model.getValue() !== this.valueOnFocus) {
       this.host?.dispatchEvent(
         new Event('change', { bubbles: true, composed: true })
