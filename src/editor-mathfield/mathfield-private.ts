@@ -1482,6 +1482,13 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
       })
     );
 
+    this.host?.dispatchEvent(
+        new UIEvent('focusin', {
+          bubbles: true, // unlike 'focus', focusin does bubble
+          composed: true,
+        })
+    );
+
     // Save the current value.
     // It will be compared in `onBlur()` to see if the
     // `change` event needs to be dispatched. This
@@ -1499,8 +1506,11 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     this.ariaLiveText!.textContent = '';
 
     complete(this, 'accept');
-    if (this.model.getValue() !== this.valueOnFocus)
-      this.executeCommand('commit');
+    if (this.model.getValue() !== this.valueOnFocus) {
+      this.host?.dispatchEvent(
+          new Event('change', { bubbles: true, composed: true })
+      );
+    }
 
     if (
       /onfocus|manual/.test(this.options.virtualKeyboardMode) &&
@@ -1515,6 +1525,13 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
         bubbles: false, // DOM 'focus' and 'blur' don't bubble
         composed: true,
       })
+    );
+
+    this.host?.dispatchEvent(
+        new UIEvent('focusout', {
+          bubbles: true, // unlike 'blur', focusout does bubble
+          composed: true,
+        })
     );
 
     requestUpdate(this);
