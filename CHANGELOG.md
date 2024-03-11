@@ -1,3 +1,41 @@
+## [Unreleased]
+
+### Improvements
+
+- Better MathML serialization of `\operatorname{}` and `\mathrm{}`
+
+### Bug Fixes
+
+- **#1797** The result type of `makeSharedVirtualKeyboard()` was incorrectly
+  specified as a private type.
+- **#1798** Using a keyboard shortcut with the `control` or `command` key would
+  not reset the inline keystroke buffer. As a result, typing `s` + `i` +
+  `ctrl`-`6` + `n` would yield `\sin` instead of `\si^n`.
+- **#1799** Better fix for **#1795**. Deleting numerator or denominator of a
+  fraction would no longer collapse the fraction.
+- **#1800** More closely matches the behavior of the `textarea` element. Only
+  dispatch an `"input"` event with an `inputType` of `"insertLineBreak"` when
+  the user pressed the **RETURN** or **ENTER** key. Also dispatch a `focusin`
+  and `focusout` event when applicable.
+
+## 0.87.0 (2023-01-20)
+
+### Improvements
+
+- Removed dependency on `jsdom` for server-side rendering.
+- Switched bundler from `rollup` to `esbuild`
+
+### Bug Fixes
+
+- **#1795** Deleting forward when there is nothing to delete was throwing an
+  exception (introduced in 0.86.1)
+- **#1763** The "plonk" sound and other accessibility announcements were not
+  dispatched. Also, sounds were not audible the first time they were played.
+- **#1762** The `\smallint` command was erroneously displayed as an extensible
+  symbol
+- The MathML serialization for superscripts and subscripts was invalid in some
+  cases.
+
 ## 0.86.1 (2023-01-18)
 
 ### Bug Fixes
